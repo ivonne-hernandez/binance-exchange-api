@@ -36,11 +36,13 @@ app.get('/markets', (request, response) => {
       const translatedData = data.map(obj => {
         const typeOfTheMarket = obj.permissions;
         let finalTypeOfTheMarket = '';
+        
         if (typeOfTheMarket[0] === 'SPOT') {
           finalTypeOfTheMarket = 'spot'
         } else {
           finalTypeOfTheMarket = 'derivative'
         }
+        
         const translatedObject = {
           id: obj.symbol,
           type: finalTypeOfTheMarket,
@@ -57,3 +59,28 @@ app.get('/markets', (request, response) => {
     })
 });
 
+app.get('/candles/:market&:interval', (request, response) => {
+  const market = request.params.market.toUpperCase();
+  const interval = request.params.interval;
+
+  axios.get(`http://api.binance.com/api/v3/klines?symbol=${market}&interval=${interval}`)
+    .then(resp => {
+      const data = resp.data;
+      
+      const translatedData = data.map(obj => {
+        return {
+          timestamp: obj[0],
+          close: obj[4],
+          open: obj[1],
+          high: obj[2],
+          low: obj[3],
+          volume: obj[5]
+        }
+      });
+
+      response.send({translatedData})
+    })
+    .catch(error => {
+      console.log(`Error: `, error.message)
+    })
+});
