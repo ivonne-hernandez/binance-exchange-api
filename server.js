@@ -1,11 +1,16 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const axios = require('axios');
 
 app.set('port', process.env.PORT || 3000);
 app.locals.title = "Binance Exchange API";
 app.use(express.json());
 app.use(cors());
+
+app.listen(app.get('port'), () => {
+  console.log(`${app.locals.title} is running on http://localhost:${app.get('port')}.`);
+});
 
 app.get('/info', (request, response) => {
   const name = "Binance";
@@ -23,6 +28,32 @@ app.get('/info', (request, response) => {
   response.json({ name, description, location, logo, website, twitter, version, capability  });
 });
 
-app.listen(app.get('port'), () => {
-  console.log(`${app.locals.title} is running on http://localhost:${app.get('port')}.`);
+app.get('/markets', (request, response) => {
+  axios.get('http://api.binance.com/api/v3/exchangeInfo')
+    .then(resp => {
+      const data = resp.data.symbols;
+
+      const translatedData = data.map(obj => {
+        const typeOfTheMarket = obj.permissions;
+        let finalTypeOfTheMarket = '';
+        if (typeOfTheMarket[0] === 'SPOT') {
+          finalTypeOfTheMarket = 'spot'
+        } else {
+          finalTypeOfTheMarket = 'derivative'
+        }
+        const translatedObject = {
+          id: obj.symbol,
+          type: finalTypeOfTheMarket,
+          base: obj.baseAsset,
+          quote: obj.quoteAsset
+        }
+
+        return translatedObject;
+      })
+      response.send({translatedData})
+    })
+    .catch(error => {
+      console.log(`Error: `, error.message)
+    })
 });
+
