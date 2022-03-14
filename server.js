@@ -52,16 +52,16 @@ app.get('/markets', (request, response) => {
 
         return translatedObject;
       })
-      response.send({translatedData})
+      response.send(translatedData)
     })
     .catch(error => {
       console.log(`Error: `, error.message)
     })
 });
 
-app.get('/candles/:market&:interval', (request, response) => {
-  const market = request.params.market.toUpperCase();
-  const interval = request.params.interval;
+app.get('/candles', (request, response) => {
+  const market = request.query.market;
+  const interval = request.query.interval;
 
   axios.get(`http://api.binance.com/api/v3/klines?symbol=${market}&interval=${interval}`)
     .then(resp => {
@@ -69,16 +69,16 @@ app.get('/candles/:market&:interval', (request, response) => {
       
       const translatedData = data.map(obj => {
         return {
-          timestamp: obj[0],
+          timestamp: obj[6].toString(),
           close: obj[4],
           open: obj[1],
           high: obj[2],
           low: obj[3],
           volume: obj[5]
         }
-      });
+      }).sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
 
-      response.send({translatedData})
+      response.send(translatedData)
     })
     .catch(error => {
       console.log(`Error: `, error.message)
